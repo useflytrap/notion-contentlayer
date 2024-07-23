@@ -1,0 +1,50 @@
+{
+  "name": "notion-contentlayer",
+  "version": "0.0.1",
+  "description": "Type-safe Notion content layer for easily rendering Notion content. Works with the Remark & Rehype ecosystem.",
+  "repository": "useflytrap/notion-contentlayer",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "skoshx <rasmus@skosh.dev>",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "typescript",
+    "type-safe",
+    "notion",
+    "blog",
+    "content layer"
+  ],
+  "scripts": {
+    "dev": "vitest dev",
+    "build": "unbuild",
+    "test": "pnpm test:core && pnpm test:types",
+    "test:core": "vitest run",
+    "test:types": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage",
+    "lint": "pnpm eslint --fix \"{src,test}/**/*.{js,json,ts}\"",
+    "format:write": "prettier --write \"**/*.{ts,tsx,mdx}\" --cache",
+    "prepublishOnly": "pnpm lint && pnpm test",
+    "release": "np"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.7.0",
+    "eslint": "^9.7.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "typescript": "^5.5.4",
+    "unbuild": "^2.0.0",
+    "vitest": "^2.0.4"
+  },
+  "packageManager": "pnpm@8.6.0"
+}
