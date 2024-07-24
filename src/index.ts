@@ -4,80 +4,90 @@
  */
 
 import { Client } from "@notionhq/client";
-import type { BlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type {
+  BlockObjectResponse,
+  DatabaseObjectResponse,
+  PageObjectResponse,
+  PartialBlockObjectResponse,
+} from "@notionhq/client/build/src/api-endpoints";
 import { Root } from "mdast";
 import type { ZodSchema } from "zod";
 import { notionError } from "./errors";
-import { err, ok } from "neverthrow";
+import { Result, err, fromAsyncThrowable, ok } from "neverthrow";
 import {
   FetchPostsOptions,
   NotionProperty,
   NotionSourceOptions,
   SchemaOutputs,
 } from "./types";
+import { supportedBlockTypes } from "./schemas/block-schemas";
 
-async function getBlocksByPageId(client: Client, pageId: string) {
-  const blocks = await client.blocks.children.list({
+function getNotionBlocksByPageId(client: Client, pageId: string) {
+  const listBlocks = fromAsyncThrowable(
+    client.blocks.children.list,
+    // @todo: fix this error
+    (error) => new Error(String(error)),
+  );
+
+  return listBlocks({
     block_id: pageId,
     page_size: 100,
-  });
-  return blocks;
+  }).map((blockList) => blockList.results as BlockObjectResponse[]);
 }
 
-async function getPageMdast(
-  client: Client,
-  postId: string,
-  allowMissingBlocktypes: boolean = true,
+function parseBlock(
+  block: BlockObjectResponse,
+  allowMissingBlocktypes = false,
 ) {
-  const mdast: Root = {
-    type: "root",
-    children: [],
-  };
-
-  const blocks = await getBlocksByPageId(client, postId);
-
-  if (blocks === undefined || blocks?.results?.length === 0) {
-    return ok(mdast);
+  const blockSchema = supportedBlockTypes[block.type];
+  if (blockSchema === undefined) return ok(undefined);
+  if (allowMissingBlocktypes === false) {
+    return err(
+      notionError({
+        events: ["fetching_page_contents_failed"],
+        explanations: ["unsupported_blocktype"],
+        solutions: ["remove_unsupported_block", "request_blocktype"],
+        params: {
+          blockType: block.type,
+        },
+      }),
+    );
   }
 
-  for (let i = 0; i < blocks.results.length; i++) {
-    // @ts-expect-error: @todo: fix this lazy typing
-    const blockSchema = supportedBlockTypes[blocks.results[i].type];
-    if (blockSchema === undefined && allowMissingBlocktypes === true) {
-      continue;
-    }
-    if (blockSchema === undefined && allowMissingBlocktypes === false) {
-      return err(
-        notionError({
-          events: ["fetching_page_contents_failed"],
-          explanations: ["unsupported_blocktype"],
-          solutions: ["remove_unsupported_block", "request_blocktype"],
-          params: {
-            blockType: (blocks.results[i] as BlockObjectResponse).type,
-          },
-        }),
-      );
-    }
+  const parseResult = blockSchema.safeParse(block);
 
-    const parseResult = blockSchema.safeParse(blocks.results[i]);
-
-    if (parseResult.success === false) {
-      return err(
-        notionError({
-          events: ["fetching_page_contents_failed"],
-          explanations: ["unsupported_blocktype"],
-          solutions: ["remove_unsupported_block", "request_blocktype"],
-          params: {
-            blockType: (blocks.results[i] as BlockObjectResponse).type,
-          },
-        }),
-      );
-    }
-
-    mdast.children.push(parseResult.data);
+  if (parseResult.success === false) {
+    return err(
+      notionError({
+        events: ["fetching_page_contents_failed"],
+        explanations: ["unsupported_blocktype"],
+        solutions: ["remove_unsupported_block", "request_blocktype"],
+        params: {
+          blockType: block.type,
+        },
+      }),
+    );
   }
 
-  return ok(mdast);
+  return ok(parseResult.data);
+}
+
+function getPageMdast(
+  blocks: BlockObjectResponse[],
+  allowMissingBlocktypes = true,
+) {
+  const children = blocks.map((block) => {
+    return parseBlock(block, allowMissingBlocktypes);
+  });
+
+  const childrenCombined = Result.combine(children);
+  return childrenCombined.map(
+    (children) =>
+      ({
+        type: "root",
+        children,
+      }) satisfies Root,
+  );
 }
 
 function parseProperties<
@@ -94,25 +104,36 @@ function parseProperties<
     );
 
     if (parseResult.success) {
-      const result = parseResult.data;
+      const result = parseResult.data as Result<unknown, string>;
 
-      if (result.err && fallback === undefined) {
+      if (result.isErr() && fallback === undefined) {
         const errorThing = notionError({
           events: ["fetching_posts_failed"],
           explanations: ["missing_params"],
-          solutions: ["add_missing_param", "provide_fallback"],
+          solutions: [
+            "add_missing_param",
+            "provide_fallback",
+            "add_skip_missing_fields",
+          ],
           params: {
             notionPageUrl: "https://www.notion.so",
             parameterName: propertyName,
-            parameterType: result.val,
+            parameterType: result.error,
+            postId: id,
           },
         });
 
         return err(errorThing);
       }
 
-      parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
-        result.err && fallback ? fallback : result.val;
+      if (result.isErr() && fallback !== undefined) {
+        parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
+          fallback;
+      }
+      if (result.isOk()) {
+        parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
+          result.value;
+      }
     } else {
       const errorMessageParts = [
         `Parsing property "${propertyName}" failed because of a schema parse error.`,
@@ -136,32 +157,49 @@ function parseProperties<
   } as SchemaOutputs<T>);
 }
 
+function findNotionDatabaseById(client: Client, databaseId: string) {
+  const query = fromAsyncThrowable(
+    client.databases.query,
+    // @todo: fix this error
+    (error) => new Error(String(error)),
+  );
+
+  return query({
+    database_id: databaseId,
+  }).map((result) => result.results as PageObjectResponse[]);
+}
+
 export function createNotionSource<
   T extends Record<string, NotionProperty<ZodSchema>>,
 >(options: NotionSourceOptions<T>) {
   async function fetchPosts({
-    content,
+    content = false,
     skipMissingFields,
     allowMissingBlocktypes,
   }: Partial<FetchPostsOptions> = {}) {
     // Assert server side
-
-    const databaseResult = await options.client.databases.query({
-      database_id: options.databaseId,
+    const notionDatabase = findNotionDatabaseById(
+      options.client,
+      options.databaseId,
+    );
+    const postsWithParsedProperties = notionDatabase.map((results) => {
+      return results.map(({ id, properties }) =>
+        parseProperties(id, options.properties, properties),
+      );
+    });
+    // Filter away posts with missing fields if `skipMissingFields` is true
+    const filteredPosts = postsWithParsedProperties.map(async (posts) => {
+      if (skipMissingFields) {
+        return posts.filter((post) => post.isOk());
+      }
+      return posts;
     });
 
-    let parsedPostResults = databaseResult.results.map((result) =>
-      // @ts-expect-error: @todo: fix types
-      parseProperties(result.id, options.properties, result.properties),
-    );
+    const filteredPostsResult = await filteredPosts;
+    if (filteredPostsResult.isErr()) return filteredPostsResult;
 
-    if (skipMissingFields) {
-      parsedPostResults = parsedPostResults.filter((result) => !result.err);
-    }
-
-    const postResults = Result.all(...parsedPostResults);
-
-    if (postResults.err) {
+    const postResults = Result.combine(filteredPostsResult.value);
+    if (postResults.isErr()) {
       return postResults;
     }
 
@@ -170,18 +208,22 @@ export function createNotionSource<
     }
 
     // Fetch the "blocks", and turn into MDAST.
-    const postsWithBlocks = await Promise.all(
-      postResults.val.map(async (post) => {
-        return {
-          ...post,
-          mdast: (
-            await getPageMdast(options.client, post.id, allowMissingBlocktypes)
-          ).unwrap(),
-        };
-      }),
-    );
+    const posts = postResults.value;
+    const transformedPosts: (SchemaOutputs<T> & { blocks: Root })[] = [];
+    for (let i = 0; i < posts.length; i++) {
+      const post = posts[i];
+      const pageWithBlocksResult = await getNotionBlocksByPageId(
+        options.client,
+        post.id,
+      ).andThen((blocks) => getPageMdast(blocks, allowMissingBlocktypes));
+      if (pageWithBlocksResult.isErr()) return pageWithBlocksResult;
+      transformedPosts.push({
+        ...posts[i],
+        blocks: pageWithBlocksResult.value,
+      });
+    }
 
-    return ok(postsWithBlocks);
+    return ok(transformedPosts);
   }
 
   /**

@@ -11,10 +11,11 @@ export const notionError = createHumanLogs({
       "because a package.json file could not be found while traversing up the filetree.",
     missing_params: {
       template:
-        'because the {parameterType} "{parameterName}" is missing for post, and no fallback was provided.',
+        'because the {parameterType} "{parameterName}" is missing for post with ID "{postId}", and no fallback was provided.',
       params: {
         parameterType: "",
         parameterName: "",
+        postId: "",
       },
     },
     unsupported_blocktype: {
@@ -32,6 +33,11 @@ export const notionError = createHumanLogs({
       params: {
         parameterName: "",
       },
+    },
+    add_skip_missing_fields: {
+      template:
+        "If you want to skip posts that have missing fields, add `skipMissingFields`: true to your `fetchPosts` call like this: `notionSource.fetchPosts({ skipMissingFields: true })`",
+      params: {},
     },
     add_missing_param: {
       template: "add the missing {parameterType} on Notion",

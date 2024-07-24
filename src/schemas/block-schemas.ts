@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { ZodSchema, z } from "zod";
 import type {
   Code,
   Heading,
@@ -190,7 +190,7 @@ const imageBlock = z
     } satisfies Image;
   });
 
-export const supportedBlockTypes = {
+export const supportedBlockTypes: Record<string, ZodSchema | undefined> = {
   paragraph: paragraphBlock,
   heading_3: heading3Block,
   code: codeBlock,

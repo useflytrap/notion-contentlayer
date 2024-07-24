@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "esnext",
+    /* Modules */
+    "module": "esnext",
+    "moduleResolution": "node",
+    
+    
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Type Checking */
+    "strict": true,
+    
+    /* Completeness */
+    "skipLibCheck": true
+  }
+}
