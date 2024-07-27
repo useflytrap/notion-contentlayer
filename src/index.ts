@@ -3,170 +3,177 @@
  * - nested list items not transformed correctly.
  */
 
-import { Client } from "@notionhq/client";
+import { Client } from "@notionhq/client"
 import type {
   BlockObjectResponse,
-  DatabaseObjectResponse,
   PageObjectResponse,
-  PartialBlockObjectResponse,
-} from "@notionhq/client/build/src/api-endpoints";
-import { Root } from "mdast";
-import type { ZodSchema } from "zod";
-import { notionError } from "./errors";
-import { Result, err, fromAsyncThrowable, ok } from "neverthrow";
+} from "@notionhq/client/build/src/api-endpoints"
+import { Root } from "mdast"
+import type { ZodSchema } from "zod"
+import { notionError } from "./errors"
+import { Result, err, fromAsyncThrowable, ok } from "neverthrow"
 import {
   FetchPostsOptions,
   NotionProperty,
   NotionSourceOptions,
   SchemaOutputs,
-} from "./types";
-import { supportedBlockTypes } from "./schemas/block-schemas";
+} from "./types"
+import { supportedBlockTypes } from "./schemas/block-schemas"
 
 function getNotionBlocksByPageId(client: Client, pageId: string) {
   const listBlocks = fromAsyncThrowable(
     client.blocks.children.list,
     // @todo: fix this error
-    (error) => new Error(String(error)),
-  );
+    (error) => new Error(String(error))
+  )
 
   return listBlocks({
     block_id: pageId,
     page_size: 100,
-  }).map((blockList) => blockList.results as BlockObjectResponse[]);
+  }).map((blockList) => blockList.results as BlockObjectResponse[])
 }
 
 function parseBlock(
   block: BlockObjectResponse,
-  allowMissingBlocktypes = false,
+  allowMissingBlocktypes = false
 ) {
-  const blockSchema = supportedBlockTypes[block.type];
-  if (blockSchema === undefined) return ok(undefined);
+  const blockSchema = supportedBlockTypes[block.type]
+  if (blockSchema === undefined) return ok(undefined)
   if (allowMissingBlocktypes === false) {
     return err(
-      notionError({
-        events: ["fetching_page_contents_failed"],
-        explanations: ["unsupported_blocktype"],
-        solutions: ["remove_unsupported_block", "request_blocktype"],
-        params: {
+      notionError(
+        [
+          "fetching_page_contents_failed",
+          "unsupported_blocktype",
+          "remove_unsupported_block",
+          "request_blocktype",
+        ],
+        {
           blockType: block.type,
-        },
-      }),
-    );
+        }
+      )
+    )
   }
 
-  const parseResult = blockSchema.safeParse(block);
+  const parseResult = blockSchema.safeParse(block)
 
   if (parseResult.success === false) {
     return err(
-      notionError({
-        events: ["fetching_page_contents_failed"],
-        explanations: ["unsupported_blocktype"],
-        solutions: ["remove_unsupported_block", "request_blocktype"],
-        params: {
+      notionError(
+        [
+          "fetching_page_contents_failed",
+          "unsupported_blocktype",
+          "remove_unsupported_block",
+          "request_blocktype",
+        ],
+        {
           blockType: block.type,
-        },
-      }),
-    );
+        }
+      )
+    )
   }
 
-  return ok(parseResult.data);
+  return ok(parseResult.data)
 }
 
 function getPageMdast(
   blocks: BlockObjectResponse[],
-  allowMissingBlocktypes = true,
+  allowMissingBlocktypes = true
 ) {
   const children = blocks.map((block) => {
-    return parseBlock(block, allowMissingBlocktypes);
-  });
+    return parseBlock(block, allowMissingBlocktypes)
+  })
 
-  const childrenCombined = Result.combine(children);
+  const childrenCombined = Result.combine(children)
   return childrenCombined.map(
     (children) =>
       ({
         type: "root",
         children,
-      }) satisfies Root,
-  );
+      }) satisfies Root
+  )
 }
 
 function parseProperties<
   T extends Record<string, NotionProperty<ZodSchema>>,
   K extends object,
 >(id: string, definitions: T, values: K) {
-  const parsedProperties: Partial<SchemaOutputs<T>> = {};
+  const parsedProperties: Partial<SchemaOutputs<T>> = {}
   for (const [
     mappedPropertyName,
     { propertyName, schema, fallback },
   ] of Object.entries(definitions)) {
     const parseResult = schema.safeParse(
-      values[propertyName as keyof typeof values],
-    );
+      values[propertyName as keyof typeof values]
+    )
 
     if (parseResult.success) {
-      const result = parseResult.data as Result<unknown, string>;
+      const result = parseResult.data as Result<unknown, string>
 
       if (result.isErr() && fallback === undefined) {
-        const errorThing = notionError({
-          events: ["fetching_posts_failed"],
-          explanations: ["missing_params"],
-          solutions: [
-            "add_missing_param",
-            "provide_fallback",
-            "add_skip_missing_fields",
-          ],
-          params: {
-            notionPageUrl: "https://www.notion.so",
-            parameterName: propertyName,
-            parameterType: result.error,
-            postId: id,
-          },
-        });
-
-        return err(errorThing);
+        return err(
+          notionError(
+            [
+              "fetching_posts_failed",
+              "missing_params",
+              "add_missing_param",
+              "add_skip_missing_fields",
+            ],
+            {
+              paramName: propertyName,
+              paramType: result.error,
+              postId: id,
+            }
+          )
+        )
       }
 
       if (result.isErr() && fallback !== undefined) {
         parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
-          fallback;
+          fallback
       }
       if (result.isOk()) {
         parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
-          result.value;
+          result.value
       }
     } else {
-      const errorMessageParts = [
-        `Parsing property "${propertyName}" failed because of a schema parse error.`,
-        `Zod Errors: `,
-        parseResult.error.flatten().formErrors.join("\n"),
-        `Error paths: ${parseResult.error.issues.map(
-          (i) => `"${i.path.join(".")}"`,
-        )}`,
-        `-- Data:`,
-        JSON.stringify(values[propertyName as keyof typeof values], null, 2),
-        `--`,
-        "Please open an issue for this here https://github.com/useflytrap/contentlayer/issues",
-      ];
-      return err(errorMessageParts.join("\n"));
+      const formErrors = parseResult.error.flatten().formErrors.join("\n")
+      const errorPaths = parseResult.error.issues
+        .map((i) => `"${i.path.join(".")}"`)
+        .join(", ")
+      const data = JSON.stringify(
+        values[propertyName as keyof typeof values],
+        null,
+        2
+      )
+
+      return err(
+        notionError(["parsing_property_failed", "open_issue"], {
+          propertyName,
+          formErrors,
+          errorPaths,
+          data,
+        })
+      )
     }
   }
   // @todo: make sure `parsedProperties` isn't `Partial` anymore.
   return ok({
     ...parsedProperties,
     id,
-  } as SchemaOutputs<T>);
+  } as SchemaOutputs<T>)
 }
 
 function findNotionDatabaseById(client: Client, databaseId: string) {
   const query = fromAsyncThrowable(
     client.databases.query,
     // @todo: fix this error
-    (error) => new Error(String(error)),
-  );
+    (error) => new Error(String(error))
+  )
 
   return query({
     database_id: databaseId,
-  }).map((result) => result.results as PageObjectResponse[]);
+  }).map((result) => result.results as PageObjectResponse[])
 }
 
 export function createNotionSource<
@@ -180,50 +187,50 @@ export function createNotionSource<
     // Assert server side
     const notionDatabase = findNotionDatabaseById(
       options.client,
-      options.databaseId,
-    );
+      options.databaseId
+    )
     const postsWithParsedProperties = notionDatabase.map((results) => {
       return results.map(({ id, properties }) =>
-        parseProperties(id, options.properties, properties),
-      );
-    });
+        parseProperties(id, options.properties, properties)
+      )
+    })
     // Filter away posts with missing fields if `skipMissingFields` is true
     const filteredPosts = postsWithParsedProperties.map(async (posts) => {
       if (skipMissingFields) {
-        return posts.filter((post) => post.isOk());
+        return posts.filter((post) => post.isOk())
       }
-      return posts;
-    });
+      return posts
+    })
 
-    const filteredPostsResult = await filteredPosts;
-    if (filteredPostsResult.isErr()) return filteredPostsResult;
+    const filteredPostsResult = await filteredPosts
+    if (filteredPostsResult.isErr()) return filteredPostsResult
 
-    const postResults = Result.combine(filteredPostsResult.value);
+    const postResults = Result.combine(filteredPostsResult.value)
     if (postResults.isErr()) {
-      return postResults;
+      return postResults
     }
 
     if (content === false) {
-      return postResults;
+      return postResults
     }
 
     // Fetch the "blocks", and turn into MDAST.
-    const posts = postResults.value;
-    const transformedPosts: (SchemaOutputs<T> & { blocks: Root })[] = [];
+    const posts = postResults.value
+    const transformedPosts: (SchemaOutputs<T> & { blocks: Root })[] = []
     for (let i = 0; i < posts.length; i++) {
-      const post = posts[i];
+      const post = posts[i]
       const pageWithBlocksResult = await getNotionBlocksByPageId(
         options.client,
-        post.id,
-      ).andThen((blocks) => getPageMdast(blocks, allowMissingBlocktypes));
-      if (pageWithBlocksResult.isErr()) return pageWithBlocksResult;
+        post.id
+      ).andThen((blocks) => getPageMdast(blocks, allowMissingBlocktypes))
+      if (pageWithBlocksResult.isErr()) return pageWithBlocksResult
       transformedPosts.push({
         ...posts[i],
         blocks: pageWithBlocksResult.value,
-      });
+      })
     }
 
-    return ok(transformedPosts);
+    return ok(transformedPosts)
   }
 
   /**
@@ -240,5 +247,5 @@ export function createNotionSource<
     readPosts,
     fetchPosts,
     getPostContents,
-  };
+  }
 }

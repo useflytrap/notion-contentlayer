@@ -1,4 +1,4 @@
-import { ZodSchema, z } from "zod";
+import { ZodSchema, z } from "zod"
 import type {
   Code,
   Heading,
@@ -6,7 +6,7 @@ import type {
   ListItem,
   Paragraph,
   PhrasingContent,
-} from "mdast";
+} from "mdast"
 
 export const textPart = z
   .object({
@@ -40,7 +40,7 @@ export const textPart = z
             value: textPartObject.text.content,
           },
         ],
-      } satisfies PhrasingContent;
+      } satisfies PhrasingContent
     }
 
     if (textPartObject.annotations.bold) {
@@ -52,14 +52,14 @@ export const textPart = z
             value: textPartObject.plain_text,
           },
         ],
-      } satisfies PhrasingContent;
+      } satisfies PhrasingContent
     }
 
     if (textPartObject.annotations.code) {
       return {
         type: "inlineCode",
         value: textPartObject.plain_text,
-      } satisfies PhrasingContent;
+      } satisfies PhrasingContent
     }
 
     if (textPartObject.annotations.italic) {
@@ -71,14 +71,14 @@ export const textPart = z
             value: textPartObject.plain_text,
           },
         ],
-      } satisfies PhrasingContent;
+      } satisfies PhrasingContent
     }
 
     return {
       type: "text",
       value: textPartObject.plain_text,
-    } satisfies PhrasingContent;
-  });
+    } satisfies PhrasingContent
+  })
 
 const paragraphBlock = z
   .object({
@@ -91,8 +91,8 @@ const paragraphBlock = z
     return {
       type: "paragraph",
       children: paragraphObject.paragraph.rich_text,
-    } satisfies Paragraph;
-  });
+    } satisfies Paragraph
+  })
 
 const heading3Block = z
   .object({
@@ -106,8 +106,8 @@ const heading3Block = z
       type: "heading",
       depth: 3,
       children: headingObject.heading_3.rich_text,
-    } satisfies Heading;
-  });
+    } satisfies Heading
+  })
 
 const codeBlock = z
   .object({
@@ -128,8 +128,8 @@ const codeBlock = z
           caption: codeObject.code.caption.at(-1)?.value,
         },
       }),
-    } satisfies Code;
-  });
+    } satisfies Code
+  })
 
 const bulletedListItem = z
   .object({
@@ -147,8 +147,8 @@ const bulletedListItem = z
           children: bulletedListItemObject.bulleted_list_item.rich_text,
         },
       ],
-    } satisfies ListItem;
-  });
+    } satisfies ListItem
+  })
 
 const numberedListItem = z
   .object({
@@ -166,8 +166,8 @@ const numberedListItem = z
           children: numberedListItemObject.numbered_list_item.rich_text,
         },
       ],
-    } satisfies ListItem;
-  });
+    } satisfies ListItem
+  })
 
 const imageBlock = z
   .object({
@@ -187,8 +187,8 @@ const imageBlock = z
       ...(imageObject.image.caption.at(0)?.value && {
         alt: imageObject.image.caption.at(0)?.value,
       }),
-    } satisfies Image;
-  });
+    } satisfies Image
+  })
 
 export const supportedBlockTypes: Record<string, ZodSchema | undefined> = {
   paragraph: paragraphBlock,
@@ -197,4 +197,4 @@ export const supportedBlockTypes: Record<string, ZodSchema | undefined> = {
   bulleted_list_item: bulletedListItem,
   numbered_list_item: numberedListItem,
   image: imageBlock,
-};
+}

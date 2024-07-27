@@ -1,5 +1,5 @@
-import { err, ok } from "neverthrow";
-import { z } from "zod";
+import { err, ok } from "neverthrow"
+import { z } from "zod"
 
 export const richTextSchema = z.object({
   type: z.string(),
@@ -20,7 +20,7 @@ export const richTextSchema = z.object({
   }),
   plain_text: z.string(),
   href: z.string().nullable(),
-});
+})
 
 export const richTextPropertySchema = z
   .object({
@@ -30,11 +30,11 @@ export const richTextPropertySchema = z
   })
   .transform((textObj) => {
     if (textObj.rich_text?.[0]?.plain_text === undefined) {
-      return err(`text`);
+      return err(`text`)
     }
 
-    return ok(textObj.rich_text[0].plain_text);
-  });
+    return ok(textObj.rich_text[0].plain_text)
+  })
 
 export const urlSchema = z
   .object({
@@ -44,10 +44,10 @@ export const urlSchema = z
   })
   .transform((urlObj) => {
     if (urlObj.url === null) {
-      return err(`URL`);
+      return err(`URL`)
     }
-    return ok(urlObj.url);
-  });
+    return ok(urlObj.url)
+  })
 
 export const userPropertySchema = z.object({
   object: z.enum(["user"]),
@@ -56,7 +56,7 @@ export const userPropertySchema = z.object({
   avatar_url: z.string().url().optional(),
   type: z.enum(["person"]).optional(),
   person: z.any().optional(),
-});
+})
 
 export const peoplePropertySchema = z
   .object({
@@ -66,10 +66,10 @@ export const peoplePropertySchema = z
   })
   .transform((peopleObj) => {
     if (peopleObj.people.length === 0) {
-      return err(`people`);
+      return err(`people`)
     }
-    return ok(peopleObj.people);
-  });
+    return ok(peopleObj.people)
+  })
 
 export const checkboxPropertySchema = z
   .object({
@@ -77,7 +77,7 @@ export const checkboxPropertySchema = z
     type: z.enum(["checkbox"]),
     checkbox: z.boolean(),
   })
-  .transform((checkboxObj) => ok(checkboxObj.checkbox));
+  .transform((checkboxObj) => ok(checkboxObj.checkbox))
 
 export const datePropertySchema = z
   .object({
@@ -92,8 +92,8 @@ export const datePropertySchema = z
       .nullable(),
   })
   .transform((dateObj) => {
-    if (dateObj.date === null) return err(`date`);
-    return ok(dateObj.date.start);
+    if (dateObj.date === null) return err(`date`)
+    return ok(dateObj.date.start)
 
     // Returns the date time string if not an interval or contains time-zone data
     // otherwise, return date object
@@ -104,7 +104,7 @@ export const datePropertySchema = z
       : dateObj.date
     ) 
     */
-  });
+  })
 
 export const selectPropertySchema = z
   .object({
@@ -119,9 +119,9 @@ export const selectPropertySchema = z
       .nullable(),
   })
   .transform((selectObj) => {
-    if (selectObj.select === null) return err(`select`);
-    return ok(selectObj.select.name);
-  });
+    if (selectObj.select === null) return err(`select`)
+    return ok(selectObj.select.name)
+  })
 
 export const statusPropertySchema = z
   .object({
@@ -137,10 +137,10 @@ export const statusPropertySchema = z
   })
   .transform((statusObj) => {
     if (statusObj.status === null) {
-      return err(`status`);
+      return err(`status`)
     }
-    return ok(statusObj.status.name);
-  });
+    return ok(statusObj.status.name)
+  })
 
 export const titlePropertySchema = z
   .object({
@@ -150,8 +150,8 @@ export const titlePropertySchema = z
   })
   .transform((titleObj) => {
     if (titleObj.title?.[0]?.plain_text === undefined) {
-      return err(`title`);
+      return err(`title`)
     }
 
-    return ok(titleObj.title[0].plain_text);
-  });
+    return ok(titleObj.title[0].plain_text)
+  })

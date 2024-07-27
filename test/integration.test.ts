@@ -1,6 +1,6 @@
-import { describe, it } from "vitest";
-import { createNotionSource } from "../src";
-import { Client } from "@notionhq/client";
+import { describe, it } from "vitest"
+import { createNotionSource } from "../src"
+import { Client } from "@notionhq/client"
 import {
   checkbox,
   date,
@@ -10,7 +10,7 @@ import {
   text,
   title,
   url,
-} from "../src/shorthands";
+} from "../src/shorthands"
 
 describe(
   "integration tests",
@@ -24,7 +24,7 @@ describe(
     it("reads content", async () => {
       const notionClient = new Client({
         auth: process.env.NOTION_API_KEY,
-      });
+      })
 
       const mockNotionSource = createNotionSource({
         properties: {
@@ -43,12 +43,12 @@ describe(
         },
         client: notionClient,
         databaseId: process.env.NOTION_TABLE_ID as string,
-      });
+      })
 
       const postsResult = await mockNotionSource.fetchPosts({
         skipMissingFields: true,
         content: true,
-      });
-    });
-  },
-);
+      })
+    })
+  }
+)

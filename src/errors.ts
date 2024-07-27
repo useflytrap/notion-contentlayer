@@ -1,69 +1,108 @@
-import { createHumanLogs } from "human-logs";
+import {
+  createHumanLogs,
+  event,
+  explanation,
+  solution,
+  createTextFormatter,
+} from "human-logs"
 
-export const notionError = createHumanLogs({
-  events: {
-    fetching_posts_failed: "Fetching posts failed",
-    saving_cache_failed: "Saving content to cache failed",
-    fetching_page_contents_failed: "Fetching content for page failed",
-  },
-  explanations: {
-    package_json_not_found:
-      "because a package.json file could not be found while traversing up the filetree.",
-    missing_params: {
-      template:
-        'because the {parameterType} "{parameterName}" is missing for post with ID "{postId}", and no fallback was provided.',
-      params: {
-        parameterType: "",
-        parameterName: "",
-        postId: "",
-      },
-    },
-    unsupported_blocktype: {
-      template:
-        'because unsupported block type "{blockType}" is included in this page.',
-      params: {
-        blockType: "",
-      },
-    },
-  },
-  solutions: {
-    provide_fallback: {
-      template:
-        'add a fallback to your parameter definition like this: \n\nurl("{parameterName}", { fallback: "https://useflytrap.com" })',
-      params: {
-        parameterName: "",
-      },
-    },
-    add_skip_missing_fields: {
-      template:
-        "If you want to skip posts that have missing fields, add `skipMissingFields`: true to your `fetchPosts` call like this: `notionSource.fetchPosts({ skipMissingFields: true })`",
+export const notionError = createHumanLogs(
+  [
+    event("fetching_posts_failed", "fetching posts failed", {
       params: {},
-    },
-    add_missing_param: {
-      template: "add the missing {parameterType} on Notion",
-      params: {
-        notionPageUrl: "",
-        parameterType: "",
-      },
-      actions: [
-        {
-          text: "Open Notion",
-          href: "https://notion.so",
+    }),
+    event("fetching_page_contents_failed", "fetching content for page failed", {
+      params: {},
+    }),
+    explanation(
+      "missing_params",
+      "the {paramType} `{paramName}` is missing for post with ID `{postId}`, and no fallback was provided",
+      {
+        params: {
+          paramType: "",
+          paramName: "",
+          postId: "",
         },
-      ],
-    },
-    remove_unsupported_block:
-      "remove the unsupported block from your Notion page.",
-    request_blocktype: {
-      template:
-        "request support for this block type by opening an issue on GitHub.",
+      }
+    ),
+    explanation(
+      "unsupported_blocktype",
+      "unsupported block type `{blockType}` is is included in this page",
+      {
+        params: {
+          blockType: "",
+        },
+      }
+    ),
+    explanation(
+      "parsing_property_failed",
+      "parsing property `{propertyName}` failed because of a schema parsing error.\nZod errors: {formErrors}\nError paths: {errorPaths}\n-- Data --\n{data}\n-- Data --",
+      {
+        params: {
+          propertyName: "",
+          formErrors: "",
+          errorPaths: "",
+          data: "",
+        },
+      }
+    ),
+    solution(
+      "add_missing_param",
+      "add the missing {paramType} on your Notion page",
+      {
+        params: {},
+      }
+    ),
+    solution(
+      "provide_fallback",
+      "add a fallback to your parameter definition like this:\n\nurl(`{paramName}`, { fallback: `https://useflytrap.com` })",
+      {
+        params: {
+          paramName: "",
+        },
+      }
+    ),
+    solution(
+      "add_skip_missing_fields",
+      "if you want to skip posts that have missing fields, add `skipMissingFields`: true to your `fetchPosts` call like this: `notionSource.fetchPosts({ skipMissingFields: true })`",
+      {
+        params: {},
+      }
+    ),
+    solution(
+      "remove_unsupported_block",
+      "remove the unsupported block from your Notion page",
+      {
+        params: {},
+      }
+    ),
+    solution(
+      "request_blocktype",
+      "request support for this block type by opening an issue on GitHub",
+      {
+        params: {},
+        actions: [
+          {
+            text: "Open an issue",
+            href: "https://github.com/useflytrap/notion-contentlayer/issues/new",
+          },
+        ],
+      }
+    ),
+    solution("open_issue", "open an issue for this on GitHub", {
       params: {},
       actions: [
         {
           text: "Open an issue",
-          href: "https://github.com",
+          href: "https://github.com/useflytrap/notion-contentlayer/issues/new",
         },
       ],
-    },
-  },
-});
+    }),
+  ],
+  {
+    formatter: createTextFormatter({
+      eventsPrefix: "🚧 ",
+      solutionsPrefix: "🛠️ ",
+    }),
+  }
+)
