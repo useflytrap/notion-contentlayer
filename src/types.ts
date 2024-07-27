@@ -11,7 +11,7 @@ export type NotionSourceOptions<T> = {
 export type NotionProperty<PropertySchema extends ZodSchema> = {
   propertyName: string
   schema: PropertySchema
-  fallback: any | undefined
+  fallback: unknown | undefined
 }
 
 export type SchemaOutputs<T extends Record<string, NotionProperty<ZodSchema>>> =

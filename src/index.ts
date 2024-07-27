@@ -136,6 +136,7 @@ function parseProperties<
       }
 
       if (result.isErr() && fallback !== undefined) {
+        // @ts-expect-error: parsed data will be correct type
         parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
           fallback
       }
