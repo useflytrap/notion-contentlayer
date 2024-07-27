@@ -11,6 +11,7 @@ import {
   title,
   url,
 } from "../src/shorthands"
+import { notionError } from "../src/errors"
 
 describe(
   "integration tests",
@@ -49,6 +50,13 @@ describe(
         skipMissingFields: true,
         content: true,
       })
+
+      if (postsResult.isOk()) {
+        // console.log("PostResult values: ")
+        // console.log(postsResult.value[0)
+      } else {
+        console.log(postsResult.error)
+      }
     })
   }
 )

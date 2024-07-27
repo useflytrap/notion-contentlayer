@@ -116,6 +116,7 @@ function parseProperties<
             [
               "fetching_posts_failed",
               "missing_params",
+              "provide_fallback",
               "add_missing_param",
               "add_skip_missing_fields",
             ],
@@ -133,6 +134,7 @@ function parseProperties<
           fallback
       }
       if (result.isOk()) {
+        // @ts-expect-error: parsed data will be correct type
         parsedProperties[mappedPropertyName as keyof SchemaOutputs<T>] =
           result.value
       }
@@ -233,18 +235,22 @@ export function createNotionSource<
     return ok(transformedPosts)
   }
 
-  /**
-   * Reads posts from cache. If none exist, returns an empty array, and fetches
-   * the posts in the background.
-   */
-  function readPosts() {}
-
-  function getPostContents(postId: string) {
-    // return getPageMdast(postId)
+  async function getPostContents(
+    postId: string,
+    {
+      allowMissingBlocktypes,
+    }: Pick<FetchPostsOptions, "allowMissingBlocktypes"> = {
+      allowMissingBlocktypes: false,
+    }
+  ) {
+    const pageMdast = await getNotionBlocksByPageId(
+      options.client,
+      postId
+    ).andThen((blocks) => getPageMdast(blocks, allowMissingBlocktypes))
+    return pageMdast
   }
 
   return {
-    readPosts,
     fetchPosts,
     getPostContents,
   }
