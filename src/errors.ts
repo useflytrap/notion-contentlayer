@@ -46,6 +46,20 @@ export const notionError = createHumanLogs(
         },
       }
     ),
+    explanation(
+      "notion_list_blocks_failed",
+      "an error occured in Notion `client.blocks.children.list` function. Notion error:\n{error}",
+      {
+        params: { error: "" },
+      }
+    ),
+    explanation(
+      "notion_query_database_failed",
+      "an error occured in Notion `client.databases.query` function. Notion error:\n{error}",
+      {
+        params: { error: "" },
+      }
+    ),
     solution(
       "add_missing_param",
       "add the missing {paramType} on your Notion page",

@@ -24,7 +24,13 @@ function getNotionBlocksByPageId(client: Client, pageId: string) {
   const listBlocks = fromAsyncThrowable(
     client.blocks.children.list,
     // @todo: fix this error
-    (error) => new Error(String(error))
+    (error) =>
+      notionError(
+        ["fetching_page_contents_failed", "notion_list_blocks_failed"],
+        {
+          error: String(error),
+        }
+      )
   )
 
   return listBlocks({
@@ -170,7 +176,10 @@ function findNotionDatabaseById(client: Client, databaseId: string) {
   const query = fromAsyncThrowable(
     client.databases.query,
     // @todo: fix this error
-    (error) => new Error(String(error))
+    (error) =>
+      notionError(["fetching_posts_failed", "notion_query_database_failed"], {
+        error: String(error),
+      })
   )
 
   return query({
