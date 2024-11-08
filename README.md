@@ -45,7 +45,7 @@ Lorem ipsum dolor sit amet
 3. Create Notion source
 
 ```typescript
-import { createNotionSource } from "notion-contentlayer"
+import { createNotionSource, url, people, checkbox, text, date, select, status, title } from "notion-contentlayer"
 import { Client } from "@notionhq/client"
 
 const notionClient = new Client({
