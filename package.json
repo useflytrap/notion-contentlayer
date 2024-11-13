@@ -1,6 +1,6 @@
 {
   "name": "notion-contentlayer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Type-safe Notion content layer for easily rendering Notion content. Works with the Remark & Rehype ecosystem.",
   "repository": "useflytrap/notion-contentlayer",
   "exports": {
