@@ -8,13 +8,14 @@ import type {
   BlockObjectResponse,
   PageObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints"
-import { Root } from "mdast"
+import type { Root } from "mdast"
 import type { ZodSchema } from "zod"
 import { notionError } from "./errors"
 import { Result, err, fromAsyncThrowable, ok } from "neverthrow"
 import {
   FetchPostsOptions,
   NotionProperty,
+  NotionSource,
   NotionSourceOptions,
   SchemaOutputs,
 } from "./types"
@@ -190,7 +191,7 @@ function findNotionDatabaseById(client: Client, databaseId: string) {
 
 export function createNotionSource<
   T extends Record<string, NotionProperty<ZodSchema>>,
->(options: NotionSourceOptions<T>) {
+>(options: NotionSourceOptions<T>): NotionSource<T> {
   async function fetchPosts({
     content = false,
     skipMissingFields,
@@ -260,8 +261,6 @@ export function createNotionSource<
     return pageMdast
   }
 
-  return {
-    fetchPosts,
-    getPostContents,
-  }
+  // @ts-expect-error: these will complain for now until we fix error handling
+  return { fetchPosts, getPostContents }
 }

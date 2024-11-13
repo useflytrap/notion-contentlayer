@@ -1,5 +1,6 @@
 import { Client } from "@notionhq/client"
-import { Ok } from "neverthrow"
+import type { Root } from "mdast"
+import { Ok, Result } from "neverthrow"
 import { z, ZodSchema } from "zod"
 
 export type NotionSourceOptions<T> = {
@@ -40,3 +41,10 @@ export type ExtractOk<T> = T extends Ok<infer U, unknown> ? U : never
 export type UnwrappedSchemaTransform<T extends ZodSchema> = ReturnType<
   z.infer<T>["unwrap"]
 >
+
+type TransformedPost<T extends Record<string, NotionProperty<ZodSchema>>>  = SchemaOutputs<T> & { blocks: Root }
+
+export type NotionSource<T extends Record<string, NotionProperty<ZodSchema>>> = {
+  fetchPosts: (options: FetchPostsOptions) => Promise<Result<Array<SchemaOutputs<T> | TransformedPost<T>>, unknown>>,
+  getPostContents: (postId: string, options: Partial<Pick<FetchPostsOptions, "allowMissingBlocktypes">>) => Promise<Result<Root, unknown>>
+}
