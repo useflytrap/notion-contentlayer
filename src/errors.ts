@@ -32,7 +32,7 @@ export const notionError = createHumanLogs(
       "unsupported_phrasing_content",
       "the MDAST `PhrasingContent` node type `{nodeType}` is not yet supported",
       {
-        params: { nodeType: '' },
+        params: { nodeType: "" },
       }
     ),
     explanation(
@@ -74,11 +74,13 @@ export const notionError = createHumanLogs(
       "request_phrasing_content_support",
       "request support for node type `{nodeType}`",
       {
-        params: { nodeType: '' },
-        actions: [{
-          text: "Open an issue",
-          href: "https://github.com/useflytrap/notion-contentlayer/issues/new",
-        }]
+        params: { nodeType: "" },
+        actions: [
+          {
+            text: "Open an issue",
+            href: "https://github.com/useflytrap/notion-contentlayer/issues/new",
+          },
+        ],
       }
     ),
     solution(

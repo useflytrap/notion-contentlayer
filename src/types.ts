@@ -42,9 +42,16 @@ export type UnwrappedSchemaTransform<T extends ZodSchema> = ReturnType<
   z.infer<T>["unwrap"]
 >
 
-type TransformedPost<T extends Record<string, NotionProperty<ZodSchema>>>  = SchemaOutputs<T> & { blocks: Root }
+type TransformedPost<T extends Record<string, NotionProperty<ZodSchema>>> =
+  SchemaOutputs<T> & { blocks: Root }
 
-export type NotionSource<T extends Record<string, NotionProperty<ZodSchema>>> = {
-  fetchPosts: (options: FetchPostsOptions) => Promise<Result<Array<SchemaOutputs<T> | TransformedPost<T>>, unknown>>,
-  getPostContents: (postId: string, options: Partial<Pick<FetchPostsOptions, "allowMissingBlocktypes">>) => Promise<Result<Root, unknown>>
-}
+export type NotionSource<T extends Record<string, NotionProperty<ZodSchema>>> =
+  {
+    fetchPosts: (
+      options: FetchPostsOptions
+    ) => Promise<Result<Array<SchemaOutputs<T> | TransformedPost<T>>, unknown>>
+    getPostContents: (
+      postId: string,
+      options: Partial<Pick<FetchPostsOptions, "allowMissingBlocktypes">>
+    ) => Promise<Result<Root, unknown>>
+  }
