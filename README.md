@@ -39,7 +39,7 @@ Hello World
     How do I find my API key and table ID?
   </summary>
 
-Lorem ipsum dolor sit amet
+TODO: Write it up
 </details>
 
 3. Create Notion source
@@ -88,7 +88,7 @@ if (postResult.isErr()) {
 
 const posts = postResult.value;
 /*
-import { Root } from "@types/mdast"
+import type { Root } from "mdast"
 
 `posts` is of type:
 type Posts = {

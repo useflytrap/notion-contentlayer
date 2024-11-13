@@ -11,6 +11,9 @@ export const notionError = createHumanLogs(
     event("fetching_posts_failed", "fetching posts failed", {
       params: {},
     }),
+    event("rendering_failed", "rendering your MDAST failed", {
+      params: {},
+    }),
     event("fetching_page_contents_failed", "fetching content for page failed", {
       params: {},
     }),
@@ -23,6 +26,13 @@ export const notionError = createHumanLogs(
           paramName: "",
           postId: "",
         },
+      }
+    ),
+    explanation(
+      "unsupported_phrasing_content",
+      "the MDAST `PhrasingContent` node type `{nodeType}` is not yet supported",
+      {
+        params: { nodeType: '' },
       }
     ),
     explanation(
@@ -58,6 +68,17 @@ export const notionError = createHumanLogs(
       "an error occured in Notion `client.databases.query` function. Notion error:\n{error}",
       {
         params: { error: "" },
+      }
+    ),
+    solution(
+      "request_phrasing_content_support",
+      "request support for node type `{nodeType}`",
+      {
+        params: { nodeType: '' },
+        actions: [{
+          text: "Open an issue",
+          href: "https://github.com/useflytrap/notion-contentlayer/issues/new",
+        }]
       }
     ),
     solution(
