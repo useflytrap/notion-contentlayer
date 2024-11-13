@@ -15,7 +15,7 @@ dependencies:
     specifier: ^7.0.0
     version: 7.0.0
   react:
-    specifier: ^18.3.1
+    specifier: ^18 || ^19 || ^19.0.0-rc
     version: 18.3.1
   zod:
     specifier: ^3.23.8
